@@ -242,7 +242,7 @@ login_required: false
 
 ```yaml
 cloud_provider: Oracle Cloud
-machine: Always Free A1 VM
+machine: VM.Standard.A1.Flex 2 OCPU / 12GB
 os: Ubuntu
 container_runtime: Docker
 orchestration: Docker Compose
