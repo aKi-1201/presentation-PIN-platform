@@ -15,7 +15,7 @@
     "cleanup": "ts-node scripts/cleanup-expired.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.14.0",
+    "@prisma/client": "^6.19.3",
     "next": "14.2.5",
     "pdfjs-dist": "^4.2.0",
     "react": "18.2.0",
@@ -28,7 +28,7 @@
     "@types/react-dom": "18.2.25",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
-    "prisma": "^5.14.0",
+    "prisma": "^6.19.3",
     "tailwindcss": "^3.4.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
