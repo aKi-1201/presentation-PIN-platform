@@ -20,7 +20,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-10">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 sm:px-8 sm:py-12 lg:py-16">
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold">Presentation PIN Platform</h1>
         <p>
@@ -29,13 +29,13 @@ export default function HomePage() {
         <p>檔案將於指定期限後自動刪除。請勿上傳高度機密、敏感個資或未授權公開的文件。</p>
       </section>
 
-      <section className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-xl font-semibold">上傳 PDF</h2>
+      <section className="grid items-start gap-6 md:grid-cols-2 lg:gap-8">
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-8">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">上傳 PDF</h2>
           <UploadForm onSuccess={handleSuccess} />
         </div>
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-xl font-semibold">輸入簡報代碼</h2>
+        <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-8">
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">輸入簡報代碼</h2>
           <CodeInput />
         </div>
       </section>

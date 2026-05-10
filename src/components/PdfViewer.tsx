@@ -87,7 +87,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
 
       const page = await pdfRef.current.getPage(currentPage);
       const viewport = page.getViewport({ scale: 1 });
-      const availableHeight = Math.max(window.innerHeight - 100, 1);
+      const availableHeight = Math.max(window.innerHeight, 1);
       const heightScale = availableHeight / viewport.height;
       const widthScale = window.innerWidth / viewport.width;
       const newScale = Math.min(heightScale, widthScale);
@@ -149,7 +149,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
     }
   }, [loading, error, renderPage]);
 
-  const handleNext = useCallback(() => {
+  const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => {
       if (!totalPages) {
         return prev + 1;
@@ -178,7 +178,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
-        handleNext();
+        goToNextPage();
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
@@ -191,7 +191,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleNext, handlePrev, handleToggleFullscreen]);
+  }, [goToNextPage, handlePrev, handleToggleFullscreen]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -209,8 +209,8 @@ export function PdfViewer({ code }: PdfViewerProps) {
     <div
       className={
         isFullscreen
-          ? "flex flex-col items-center justify-center bg-black w-full h-full"
-          : "flex min-h-screen flex-col items-center gap-4 p-6"
+          ? "relative flex flex-col items-center justify-center bg-black w-full h-full"
+          : "relative flex min-h-screen flex-col items-center gap-4 p-6"
       }
       ref={containerRef}
     >
@@ -228,23 +228,29 @@ export function PdfViewer({ code }: PdfViewerProps) {
             className={`flex items-center justify-center text-white ${
               isFullscreen ? "h-full w-full" : "h-[70vh]"
             }`}
+            onClick={goToNextPage}
           >
             <canvas
               ref={canvasRef}
-              className="object-contain max-h-[calc(100vh-100px)] max-w-full"
+              className={`object-contain max-w-full ${
+                isFullscreen ? "max-h-screen" : "max-h-[calc(100vh-100px)]"
+              }`}
             />
           </div>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-white">
+      <div
+        className="absolute bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-black/60 px-4 py-2 text-white backdrop-blur-sm"
+        onClick={(event) => event.stopPropagation()}
+      >
         <button className="rounded border px-4 py-2" type="button" onClick={handlePrev}>
           上一頁
         </button>
         <span>
           {currentPage} / {totalPages ?? "-"}
         </span>
-        <button className="rounded border px-4 py-2" type="button" onClick={handleNext}>
+        <button className="rounded border px-4 py-2" type="button" onClick={goToNextPage}>
           下一頁
         </button>
         <button
