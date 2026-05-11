@@ -1,22 +1,35 @@
-# Copilot Instructions — Presentation PIN Platform
+# Copilot Instructions — Zlide
 
 > 本文件供 VS Code GitHub Copilot / Copilot Chat 作為專案開發時的上下文指引。  
-> 請將本檔案放在專案根目錄：`copilot-instructions.md`。
 
 ---
 
 ## 1. 專案背景
 
-本專案是一個「臨時簡報存取平台」Prototype。
+本專案名稱為 **Zlide**。
+
+Zlide 是一個「臨時簡報存取平台」Prototype。
 
 核心流程：
 
 ```text
 使用者在私人設備上傳 PDF 簡報
-→ 系統產生一組短碼 / PIN
-→ 使用者在公用電腦、會議室、教室或投影設備上輸入 PIN
+→ Zlide 產生一組簡報代碼 / PIN
+→ 使用者在公用電腦、會議室、教室或投影設備上輸入代碼
 → 直接開啟 PDF 簡報
 → 檔案於指定期限後自動失效並刪除
+```
+
+品牌定位：
+
+```text
+Zlide：上傳簡報，取得代碼，到哪都能立即開講。
+```
+
+主要網域：
+
+```text
+https://zlide.app
 ```
 
 產品目標是解決：
@@ -26,7 +39,7 @@
 - 不想在公用電腦留下個人帳號或檔案
 - 希望簡報能短期暫存、快速開啟、自動刪除
 
-本階段目標是開發 Prototype，不是完整商業產品。
+本階段目標是開發 Prototype / Release Candidate，不是完整商業產品。
 
 ---
 
@@ -43,6 +56,12 @@
 
 ```text
 臨時簡報通道
+```
+
+中文輔助描述可使用：
+
+```text
+Zlide 簡報碼
 ```
 
 設計原則：
@@ -66,7 +85,7 @@ frontend:
   framework: Next.js
   language: TypeScript
   styling: Tailwind CSS
-  pdf_viewer: PDF.js
+  pdf_viewer: PDF.js / pdfjs-dist
 
 backend:
   framework: Next.js API Routes / Route Handlers
@@ -87,6 +106,7 @@ infrastructure:
   container: Docker Compose
   reverse_proxy: Caddy
   https: Caddy Auto TLS
+  primary_domain: zlide.app
 ```
 
 ---
@@ -101,13 +121,13 @@ infrastructure:
 - 檔案格式驗證
 - 檔案大小限制
 - 選擇保存期限
-- 產生 6 位英數短碼
+- 產生 6 位英數簡報代碼
 - 產生觀看網址
 - 產生管理刪除連結
 
 #### 簡報端
 
-- 首頁輸入短碼
+- 首頁輸入簡報代碼
 - `/p/[code]` 開啟簡報
 - PDF.js 顯示 PDF
 - 單頁簡報模式
@@ -121,7 +141,7 @@ infrastructure:
 - `/manage/[token]` 管理頁
 - 顯示簡報資訊
 - 手動刪除簡報
-- 刪除後短碼立即失效
+- 刪除後簡報代碼立即失效
 
 #### 系統端
 
@@ -155,7 +175,7 @@ infrastructure:
 Prototype 階段請專注在：
 
 ```text
-上傳 PDF → 取得短碼 → 輸入短碼 → 開始簡報 → 到期刪除
+上傳 PDF → 取得簡報代碼 → 輸入簡報代碼 → 開始簡報 → 到期刪除
 ```
 
 ---
@@ -172,8 +192,6 @@ allowed_file_type: PDF only
 
 不要在 Prototype 階段支援 PPT、PPTX、圖片、影片或其他格式。
 
----
-
 ### 5.2 檔案大小
 
 預設：
@@ -184,9 +202,7 @@ max_file_size_mb: 20
 
 日後可調整為 50MB，但 Prototype 初期以 20MB 為佳。
 
----
-
-### 5.3 短碼格式
+### 5.3 簡報代碼格式
 
 ```yaml
 code_length: 6
@@ -201,9 +217,7 @@ D8MXA7
 Q3R7NP
 ```
 
----
-
-### 5.4 短碼字元集
+### 5.4 簡報代碼字元集
 
 使用以下字元集，避免容易混淆的字元：
 
@@ -216,8 +230,6 @@ ABCDEFGHJKLMNPQRSTUVWXYZ23456789
 ```text
 0 O 1 I L
 ```
-
----
 
 ### 5.5 保存期限
 
@@ -232,8 +244,6 @@ retention_options:
 
 default_retention: 7d
 ```
-
----
 
 ### 5.6 登入策略
 
@@ -262,7 +272,7 @@ public code + management token
 [User Browser]
     |
     v
-[Domain + HTTPS]
+[zlide.app + HTTPS]
     |
     v
 [Caddy Reverse Proxy]
@@ -284,7 +294,7 @@ public code + management token
 專案根目錄建議：
 
 ```text
-presentation-platform/
+zlide/
 ├── app/
 │   ├── page.tsx
 │   ├── p/
@@ -394,13 +404,11 @@ Response：
 ```json
 {
   "code": "K7P9Q2",
-  "viewUrl": "/p/K7P9Q2",
-  "manageUrl": "/manage/long-random-token",
+  "viewUrl": "https://zlide.app/p/K7P9Q2",
+  "manageUrl": "https://zlide.app/manage/long-random-token",
   "expiresAt": "2026-05-17T00:00:00+08:00"
 }
 ```
-
----
 
 ### 9.2 查詢簡報
 
@@ -427,8 +435,6 @@ GET /api/presentations/[code]
 }
 ```
 
----
-
 ### 9.3 取得 PDF
 
 ```http
@@ -445,8 +451,6 @@ GET /api/presentations/[code]/file
 通過後才 stream PDF。
 
 禁止直接公開 PDF 檔案 URL。
-
----
 
 ### 9.4 管理與刪除簡報
 
@@ -495,8 +499,6 @@ public/uploads
 
 由後端驗證後回傳。
 
----
-
 ### 10.2 檔案驗證
 
 後端必須檢查：
@@ -509,8 +511,6 @@ public/uploads
 
 不要只依賴前端檢查。
 
----
-
 ### 10.3 管理 Token
 
 管理 token 必須：
@@ -522,19 +522,15 @@ public/uploads
 
 建議使用 Node.js `crypto`。
 
----
+### 10.4 簡報代碼安全
 
-### 10.4 短碼安全
-
-短碼產生規則：
+簡報代碼產生規則：
 
 - 不使用流水號
 - 不使用可預測規則
 - 使用安全亂數
 - 產生後查 DB 確認唯一
 - 如果撞碼，重新產生
-
----
 
 ### 10.5 Rate Limit
 
@@ -545,8 +541,6 @@ public/uploads
 - `GET /api/presentations/[code]/file`
 
 Prototype 可使用簡單記憶體 rate limit；若日後多 instance 再改 Redis。
-
----
 
 ### 10.6 錯誤訊息
 
@@ -564,14 +558,23 @@ Prototype 可使用簡單記憶體 rate limit；若日後多 instance 再改 Red
 代碼無效或已過期
 ```
 
----
-
 ### 10.7 noindex
 
 簡報頁與管理頁都應加入：
 
 ```html
 <meta name="robots" content="noindex,nofollow" />
+```
+
+或使用 Next.js metadata：
+
+```ts
+export const metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 ```
 
 ---
@@ -624,8 +627,6 @@ presentation.expiresAt > new Date()
 }
 ```
 
----
-
 ### 12.2 Cleanup Script
 
 建立：
@@ -646,6 +647,12 @@ scripts/cleanup-expired.ts
 
 可由 cron 執行。
 
+Oracle VM cron 建議：
+
+```cron
+0 * * * * cd /opt/zlide && docker compose exec -T app npm run cleanup:expired >> /opt/zlide/logs/cleanup.log 2>&1
+```
+
 ---
 
 ## 13. UI / UX 原則
@@ -660,14 +667,15 @@ scripts/cleanup-expired.ts
 首頁文案可使用：
 
 ```text
+Zlide
+上傳簡報，取得代碼，到哪都能立即開講。
+
 不用 USB，不用登入雲端硬碟。
-上傳 PDF，取得簡報代碼，到任何電腦輸入代碼即可開始簡報。
+上傳 PDF，取得一組簡報代碼，到任何電腦輸入代碼即可開始簡報。
 
 檔案將於指定期限後自動刪除。
 請勿上傳高度機密、敏感個資或未授權公開的文件。
 ```
-
----
 
 ### 13.2 上傳成功頁
 
@@ -679,7 +687,11 @@ scripts/cleanup-expired.ts
 - 到期時間
 - 複製按鈕
 
----
+觀看連結應使用 `APP_URL` 組成，例如：
+
+```text
+https://zlide.app/p/K7P9Q2
+```
 
 ### 13.3 簡報頁
 
@@ -691,8 +703,6 @@ scripts/cleanup-expired.ts
 - 全螢幕
 - 鍵盤切頁
 - 清楚頁碼
-
----
 
 ### 13.4 管理頁
 
@@ -758,8 +768,11 @@ API 錯誤格式建議統一：
 NODE_ENV=development
 APP_URL=http://localhost:3000
 
+# Production example
+# APP_URL=https://zlide.app
+
 # Database
-DATABASE_URL=postgresql://app:password@localhost:5432/presentation_app
+DATABASE_URL=postgresql://app:password@localhost:5432/zlide
 
 # Upload
 UPLOAD_DIR=/data/uploads
@@ -789,6 +802,12 @@ Prototype 使用 Oracle Cloud A1 VM + Docker Compose。
 - `db`: PostgreSQL
 - `caddy`: HTTPS reverse proxy
 
+正式部署建議目錄：
+
+```text
+/opt/zlide
+```
+
 PDF upload folder 必須使用 volume 掛載：
 
 ```yaml
@@ -805,6 +824,14 @@ volumes:
 
 PostgreSQL 不應對外公開 port。
 
+Caddyfile 正式網域：
+
+```text
+zlide.app {
+  reverse_proxy app:3000
+}
+```
+
 ---
 
 ## 18. 測試重點
@@ -819,12 +846,12 @@ PostgreSQL 不應對外公開 port。
 - 超過大小限制被拒絕
 - 檔名含特殊字元不會出錯
 
-### 短碼測試
+### 簡報代碼測試
 
-- 有效短碼可開啟
-- 無效短碼顯示錯誤
-- 刪除後短碼失效
-- 過期後短碼失效
+- 有效簡報代碼可開啟
+- 無效簡報代碼顯示錯誤
+- 刪除後簡報代碼失效
+- 過期後簡報代碼失效
 
 ### Viewer 測試
 
@@ -839,7 +866,7 @@ PostgreSQL 不應對外公開 port。
 - 管理連結可開啟
 - 刪除後 PDF 檔案移除
 - 刪除後 DB 狀態更新
-- 刪除後短碼不可再開啟
+- 刪除後簡報代碼不可再開啟
 
 ### Cleanup 測試
 
@@ -851,7 +878,19 @@ PostgreSQL 不應對外公開 port。
 
 ## 19. 開發優先順序
 
-請依照以下順序開發：
+目前 Zlide 已接近 Feature Complete，接下來請優先處理 Release Candidate 工作：
+
+```text
+1. zlide.app DNS 與 Caddy HTTPS
+2. Oracle A1 VM Docker Compose 部署驗證
+3. cleanup cron job 實際啟用
+4. 端對端整合測試
+5. Viewer 跨裝置測試
+6. UI/UX 最終打磨
+7. README / deployment / test plan 文件補齊
+```
+
+若從零開始開發，順序如下：
 
 ```text
 1. 專案初始化
@@ -878,16 +917,18 @@ PostgreSQL 不應對外公開 port。
 
 當產生程式碼時，請遵守：
 
-1. 不要產生會員登入、付款、AI、PPT 轉檔等超出 Prototype 範圍的功能。
-2. 不要把 PDF 放到 `public/` 目錄。
-3. 不要直接暴露本機 PDF 路徑。
-4. 不要用流水號當作 public code。
-5. 不要把 management token 明文存入資料庫。
-6. 不要在錯誤訊息中透露 code 是否存在。
-7. 不要省略後端檔案驗證。
-8. 不要只做前端檢查。
-9. 不要在 log 中輸出敏感 token。
-10. 優先完成核心流程，不要過度設計。
+1. 使用 Zlide 作為產品名稱。
+2. Production `APP_URL` 應使用 `https://zlide.app`。
+3. 不要產生會員登入、付款、AI、PPT 轉檔等超出 Prototype 範圍的功能。
+4. 不要把 PDF 放到 `public/` 目錄。
+5. 不要直接暴露本機 PDF 路徑。
+6. 不要用流水號當作 public code。
+7. 不要把 management token 明文存入資料庫。
+8. 不要在錯誤訊息中透露 code 是否存在。
+9. 不要省略後端檔案驗證。
+10. 不要只做前端檢查。
+11. 不要在 log 中輸出敏感 token。
+12. 優先完成核心流程，不要過度設計。
 
 ---
 
@@ -911,7 +952,7 @@ isPresentationAccessible(presentation: Presentation): boolean
 
 ## 22. 建議安全實作方向
 
-### 短碼產生
+### 簡報代碼產生
 
 使用 Node.js `crypto.randomInt` 或等價安全亂數。
 
@@ -921,13 +962,11 @@ isPresentationAccessible(presentation: Presentation): boolean
 Math.random()
 ```
 
-產生短碼時使用字元集：
+產生簡報代碼時使用字元集：
 
 ```ts
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 ```
-
----
 
 ### Token hash
 
@@ -943,8 +982,6 @@ crypto.createHash("sha256")
 crypto.createHmac("sha256", secret)
 ```
 
----
-
 ### PDF magic bytes
 
 PDF 檔案開頭通常應包含：
@@ -959,11 +996,11 @@ PDF 檔案開頭通常應包含：
 
 ## 23. Definition of Done
 
-Prototype 完成條件：
+Zlide Prototype / RC 完成條件：
 
 - 使用者可以上傳 PDF
-- 系統產生 6 位英數短碼
-- 使用者可在另一台裝置輸入短碼
+- 系統產生 6 位英數簡報代碼
+- 使用者可在另一台裝置輸入簡報代碼
 - 簡報頁可顯示 PDF
 - 支援鍵盤切頁
 - 支援全螢幕
@@ -973,6 +1010,7 @@ Prototype 完成條件：
 - PDF 不可公開直接存取
 - 有基本 rate limit
 - 有 noindex
+- `zlide.app` 可透過 HTTPS 使用
 - 有 README 與 `.env.example`
 
 ---
@@ -992,7 +1030,7 @@ Prototype 完成條件：
 - 付費長期保存
 - 團隊方案
 
-但 Prototype 階段請不要主動實作這些。
+但 Prototype / RC 階段請不要主動實作這些。
 
 ---
 
@@ -1002,8 +1040,8 @@ Prototype 完成條件：
 
 ```text
 上傳 PDF
-→ 取得短碼
-→ 輸入短碼
+→ 取得簡報代碼
+→ 輸入簡報代碼
 → 開始簡報
 → 到期刪除
 ```
