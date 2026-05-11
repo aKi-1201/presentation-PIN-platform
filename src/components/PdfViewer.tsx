@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type TouchEvent, type WheelEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent, type WheelEvent } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
+import toast from "react-hot-toast";
 
 interface PdfViewerProps {
   code: string;
+  expiresAt?: string | null;
 }
 
 const getWorkerSrc = () => {
@@ -23,7 +26,7 @@ const THUMBNAIL_HEIGHT = 96;
 const CONTROLS_REVEAL_ZONE_PX = 10;
 type PdfRenderTask = ReturnType<PDFPageProxy["render"]>;
 
-export function PdfViewer({ code }: PdfViewerProps) {
+export function PdfViewer({ code, expiresAt }: PdfViewerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -31,6 +34,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const filmstripRef = useRef<HTMLDivElement | null>(null);
@@ -41,6 +45,25 @@ export function PdfViewer({ code }: PdfViewerProps) {
   const thumbnailButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const thumbnailRenderTasksRef = useRef<Map<number, PdfRenderTask>>(new Map());
   const renderedThumbnailsRef = useRef<Set<number>>(new Set());
+  const formattedExpiresAt = useMemo(() => {
+    if (!expiresAt) {
+      return "-";
+    }
+
+    const parsedDate = new Date(expiresAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "-";
+    }
+
+    return new Intl.DateTimeFormat("zh-TW", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).format(parsedDate);
+  }, [expiresAt]);
 
   useEffect(() => {
     let canceled = false;
@@ -208,6 +231,28 @@ export function PdfViewer({ code }: PdfViewerProps) {
     }
   }, []);
 
+  const closeInfo = useCallback(() => {
+    setInfoOpen(false);
+  }, []);
+
+  const handleToggleInfo = useCallback(() => {
+    if (isFullscreen) {
+      return;
+    }
+
+    setInfoOpen((prev) => !prev);
+  }, [isFullscreen]);
+
+  const handleCopyCode = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success("已複製到剪貼簿");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "複製失敗";
+      toast.error(message);
+    }
+  }, [code]);
+
   useEffect(() => {
     if (!loading && !error && pdfRef.current) {
       void renderPage();
@@ -364,6 +409,27 @@ export function PdfViewer({ code }: PdfViewerProps) {
     [goToNextPage, handlePrev, isFullscreen]
   );
 
+  const handlePageWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      const { deltaY, deltaX } = event;
+      if (Math.abs(deltaY) <= Math.abs(deltaX)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (deltaY > 0) {
+        goToNextPage();
+        return;
+      }
+
+      if (deltaY < 0) {
+        handlePrev();
+      }
+    },
+    [goToNextPage, handlePrev]
+  );
+
   const handleToggleFullscreen = useCallback(() => {
     if (!containerRef.current) {
       return;
@@ -434,6 +500,12 @@ export function PdfViewer({ code }: PdfViewerProps) {
   }, [isFullscreen, scheduleHideControls]);
 
   useEffect(() => {
+    if (isFullscreen) {
+      setInfoOpen(false);
+    }
+  }, [isFullscreen]);
+
+  useEffect(() => {
     if (isFullscreen || !filmstripRef.current) {
       return;
     }
@@ -456,9 +528,10 @@ export function PdfViewer({ code }: PdfViewerProps) {
       ref={containerRef}
       onMouseMove={handlePointerMove}
       onTouchStart={handleTouchStart}
+      onWheel={handlePageWheel}
     >
       <Link
-        className={`absolute top-6 left-6 z-50 text-xl font-semibold uppercase tracking-[0.3em] text-white/80 transition hover:text-white ${
+        className={`absolute top-6 left-6 z-50 text-2xl font-semibold uppercase tracking-[0.25em] text-white/80 transition hover:text-white ${
           isFullscreen ? "hidden" : "block"
         }`}
         href="/"
@@ -525,38 +598,105 @@ export function PdfViewer({ code }: PdfViewerProps) {
       </div>
 
       <div
-        className={`absolute bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-full px-6 py-3 text-white/90 backdrop-blur-md transition-opacity ${
+        className={`absolute bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-6 rounded-full px-6 py-2 text-white/90 backdrop-blur-md transition-opacity ${
           isFullscreen
-            ? "border border-white/20 bg-black/60 shadow-lg shadow-black/40"
+            ? "border border-white/30 bg-black/70 shadow-lg shadow-black/60"
             : "border border-white/10 bg-white/10"
         } ${isFullscreen && !controlsVisible ? "pointer-events-none opacity-0" : "opacity-100"}`}
         onClick={(event) => event.stopPropagation()}
       >
         <button
-          className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
+          className="rounded-full p-2 text-white transition-all hover:bg-white/20"
           type="button"
           onClick={handlePrev}
+          title="上一頁"
+          aria-label="上一頁"
         >
-          上一頁
+          <ChevronLeft size={20} aria-hidden="true" />
         </button>
-        <span className="text-sm font-medium text-white/80">
+        <span className="text-sm font-medium tracking-widest text-white/80">
           {currentPage} / {totalPages ?? "-"}
         </span>
         <button
-          className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
+          className="rounded-full p-2 text-white transition-all hover:bg-white/20"
           type="button"
           onClick={goToNextPage}
+          title="下一頁"
+          aria-label="下一頁"
         >
-          下一頁
+          <ChevronRight size={20} aria-hidden="true" />
         </button>
+        {!isFullscreen && (
+          <button
+            className="rounded-full p-2 text-white transition-all hover:bg-white/20"
+            type="button"
+            onClick={handleToggleInfo}
+            title="分享"
+            aria-label="分享"
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
         <button
           className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
           type="button"
           onClick={handleToggleFullscreen}
         >
-          {isFullscreen ? "退出全螢幕" : "全螢幕"}
+          {isFullscreen ? "退出全螢幕" : "進入全螢幕"}
         </button>
       </div>
+
+      {infoOpen && !isFullscreen && (
+        <div
+          className="absolute inset-0 z-[60] flex items-center justify-center bg-black/40 px-6"
+          onClick={closeInfo}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-md rounded-3xl bg-white/20 p-6 text-white shadow-2xl ring-1 ring-white/20 backdrop-blur-xl sm:p-8"
+            role="dialog"
+            aria-modal="true"
+            aria-label="簡報資訊"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/70">Zlide</p>
+              <h2 className="mt-3 text-lg font-semibold text-white">簡報資訊</h2>
+              <p className="mt-2 text-xs text-white/70">請複製簡報代碼分享。</p>
+            </header>
+
+            <div className="mt-6 text-center">
+              <p className="text-xs font-medium text-white/70">簡報代碼</p>
+              <div className="mt-2 text-6xl font-bold tracking-widest text-white">
+                {code}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button
+                className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-white/90"
+                type="button"
+                onClick={handleCopyCode}
+              >
+                複製代碼
+              </button>
+            </div>
+
+            <div className="mt-6 text-center text-xs text-white/70">
+              <div>到期時間：{formattedExpiresAt}</div>
+              <div className="mt-1">此簡報將於上述時間自動銷毀。</div>
+            </div>
+
+            <button
+              className="mt-4 w-full text-xs font-semibold text-white/70 underline underline-offset-4 transition hover:text-white"
+              type="button"
+              onClick={closeInfo}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

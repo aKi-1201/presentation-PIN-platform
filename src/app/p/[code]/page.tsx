@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PdfViewer } from "@/components/PdfViewer";
 import { headers } from "next/headers";
+import type { PresentationMetaResponse } from "@/types/presentation";
 
 export const metadata: Metadata = {
   robots: {
@@ -28,9 +29,8 @@ export default async function PresentationPage({ params }: PresentationPageProps
   const response = await fetch(`${baseUrl}/api/presentations/${code}`, {
     cache: "no-store"
   });
-  const isValid = response.ok;
 
-  if (!isValid) {
+  if (!response.ok) {
     return (
       <main className="mx-auto w-full max-w-3xl px-6 py-10">
         <h1 className="text-2xl font-semibold">代碼無效或已過期</h1>
@@ -38,9 +38,12 @@ export default async function PresentationPage({ params }: PresentationPageProps
     );
   }
 
+  const data = (await response.json()) as PresentationMetaResponse;
+  const expiresAt = typeof data?.expiresAt === "string" ? data.expiresAt : null;
+
   return (
     <main className="min-h-screen bg-black text-white">
-      <PdfViewer code={code} />
+      <PdfViewer code={code} expiresAt={expiresAt} />
     </main>
   );
 }

@@ -4,10 +4,11 @@ import toast from "react-hot-toast";
 
 interface CopyButtonsProps {
   code: string;
-  viewUrl: string;
+  viewUrl?: string;
   layout?: "inline" | "stacked";
   primaryLabel?: string;
   secondaryLabel?: string;
+  showSecondary?: boolean;
   primaryClassName?: string;
   secondaryClassName?: string;
   containerClassName?: string;
@@ -15,10 +16,11 @@ interface CopyButtonsProps {
 
 export function CopyButtons({
   code,
-  viewUrl,
+  viewUrl = "",
   layout = "inline",
   primaryLabel = "複製代碼",
   secondaryLabel = "複製觀看連結",
+  showSecondary = true,
   primaryClassName,
   secondaryClassName,
   containerClassName
@@ -34,6 +36,7 @@ export function CopyButtons({
     : "rounded border px-4 py-2";
   const canCopyCode = Boolean(code);
   const canCopyViewUrl = Boolean(viewUrl) && viewUrl !== "#";
+  const shouldShowSecondary = showSecondary;
 
   const copyText = async (text: string) => {
     try {
@@ -56,14 +59,16 @@ export function CopyButtons({
         >
           {primaryLabel}
         </button>
-        <button
-          className={secondaryClassName ?? defaultSecondaryClassName}
-          type="button"
-          onClick={() => copyText(viewUrl)}
-          disabled={!canCopyViewUrl}
-        >
-          {secondaryLabel}
-        </button>
+        {shouldShowSecondary && (
+          <button
+            className={secondaryClassName ?? defaultSecondaryClassName}
+            type="button"
+            onClick={() => copyText(viewUrl)}
+            disabled={!canCopyViewUrl}
+          >
+            {secondaryLabel}
+          </button>
+        )}
       </div>
     </div>
   );

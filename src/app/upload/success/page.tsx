@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButtons } from "@/components/CopyButtons";
+import { Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   robots: {
@@ -39,7 +40,7 @@ export default function UploadSuccessPage({
   return (
     <main className="relative flex min-h-screen w-full items-center justify-center bg-slate-50 px-6 py-12">
       <Link
-        className="absolute top-6 left-1/2 -translate-x-1/2 text-xs font-semibold uppercase tracking-[0.4em] text-slate-500 transition hover:opacity-70"
+        className="absolute top-6 left-6 z-50 text-2xl font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-900"
         href="/"
       >
         Zlide
@@ -62,25 +63,25 @@ export default function UploadSuccessPage({
           <div className="mt-8 space-y-3">
             <CopyButtons
               code={code}
-              viewUrl={viewUrl}
               layout="stacked"
               primaryLabel="複製簡報代碼"
-              secondaryLabel="複製觀看連結"
+              showSecondary={false}
             />
-          </div>
-
-          <div className="mt-6 text-center">
-            <div className="text-xs text-slate-500">到期時間：{formattedExpiresAt}</div>
-            <div className="mt-1 text-xs text-slate-500">此簡報將於上述時間自動銷毀。</div>
-          </div>
-
-          <div className="mt-6 text-center">
             <Link
-              className="text-sm text-slate-500 underline underline-offset-4 transition hover:text-slate-900"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-200"
               href={viewUrl}
             >
-              開啟簡報
+              預覽簡報
             </Link>
+          </div>
+
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center gap-2 text-xs text-slate-500">
+              <Clock size={14} className="text-slate-400" aria-hidden="true" />
+              <span>到期時間：</span>
+              <span className="font-semibold text-slate-800">{formattedExpiresAt}</span>
+            </div>
+            <div className="mt-1 text-xs text-slate-500">此簡報將於上述時間自動銷毀。</div>
           </div>
         </section>
       </div>
