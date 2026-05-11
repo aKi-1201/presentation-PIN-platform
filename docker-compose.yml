@@ -5,6 +5,7 @@ services:
     build: .
     environment:
       - NODE_ENV=production
+      - APP_URL=https://zlide.app
     volumes:
       - ./data/uploads:/data/uploads
     depends_on:

@@ -1,43 +1,84 @@
 "use client";
 
-import { UploadForm } from "@/components/UploadForm";
+import { UploadForm, type UploadFormHandle } from "@/components/UploadForm";
 import { CodeInput } from "@/components/CodeInput";
 import type { UploadResponse } from "@/types/presentation";
 import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 export default function HomePage() {
   const router = useRouter();
+  const uploadFormRef = useRef<UploadFormHandle>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleSuccess = (result: UploadResponse) => {
-    const manageToken = result.manageUrl.split("/").filter(Boolean).pop() ?? "";
     const params = new URLSearchParams({
       code: result.code,
-      manageToken,
       expiresAt: result.expiresAt
     });
 
     router.push(`/upload/success?${params.toString()}`);
   };
 
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!event.dataTransfer.types.includes("Files")) {
+      return;
+    }
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const { relatedTarget, currentTarget } = event;
+    if (relatedTarget instanceof Node && currentTarget.contains(relatedTarget)) {
+      return;
+    }
+    setIsDragging(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const droppedFile = event.dataTransfer.files?.[0];
+    if (droppedFile) {
+      uploadFormRef.current?.handleExternalFile(droppedFile);
+    }
+  };
+
+  const uploadCardClasses = isDragging
+    ? "rounded-2xl border-2 border-dashed border-blue-500 bg-blue-50 p-6 shadow-lg transition-all sm:p-8"
+    : "rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-sm transition-all sm:p-8";
+
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 sm:px-8 sm:py-12 lg:py-16">
-      <section className="space-y-4">
-        <h1 className="text-3xl font-semibold">Presentation PIN Platform</h1>
-        <p>
-          不用 USB，不用登入雲端硬碟。上傳 PDF，取得簡報代碼，到任何電腦輸入代碼即可開始簡報。
+    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-10 px-6 py-10 sm:gap-12 sm:px-8 sm:py-14 lg:py-16">
+      <section className="w-full max-w-3xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">Zlide</p>
+        <h1 className="mt-4 text-2xl font-semibold text-slate-900 sm:text-3xl">輸入簡報代碼</h1>
+        <p className="mt-3 text-sm text-slate-500 sm:text-base">
+          不用 USB，不用登入雲端硬碟。輸入代碼即可在任何電腦開啟簡報。
         </p>
-        <p>檔案將於指定期限後自動刪除。請勿上傳高度機密、敏感個資或未授權公開的文件。</p>
+        <div className="mt-8 sm:mt-10">
+          <CodeInput variant="hero" autoFocus />
+        </div>
       </section>
 
-      <section className="grid items-start gap-6 md:grid-cols-2 lg:gap-8">
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-8">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">上傳 PDF</h2>
-          <UploadForm onSuccess={handleSuccess} />
+      <section className="w-full max-w-3xl space-y-4">
+        <div
+          className={uploadCardClasses}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <h2 className="mb-3 text-base font-semibold text-slate-900">上傳 PDF</h2>
+          <p className="mb-4 text-sm text-slate-500 sm:text-base">
+            拖曳 PDF 到此，或點選下方選擇檔案。
+          </p>
+          <UploadForm ref={uploadFormRef} onSuccess={handleSuccess} />
         </div>
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-shadow hover:shadow-md sm:p-8">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900">輸入簡報代碼</h2>
-          <CodeInput />
-        </div>
+        <p className="text-xs text-slate-500 sm:text-sm">
+          檔案將於指定期限後自動刪除。請勿上傳高度機密、敏感個資或未授權公開的文件。
+        </p>
       </section>
     </main>
   );

@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type { RetentionOption, UploadResponse } from "@/types/presentation";
 
 interface UploadFormProps {
   onSuccess: (result: UploadResponse) => void;
 }
+
+export type UploadFormHandle = {
+  handleExternalFile: (file: File) => void;
+};
 
 const RETENTION_OPTIONS: { label: string; value: RetentionOption }[] = [
   { label: "1 小時", value: "1h" },
@@ -16,16 +20,22 @@ const RETENTION_OPTIONS: { label: string; value: RetentionOption }[] = [
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
-export function UploadForm({ onSuccess }: UploadFormProps) {
+export const UploadForm = forwardRef<UploadFormHandle, UploadFormProps>(({ onSuccess }, ref) => {
   const [file, setFile] = useState<File | null>(null);
   const [retention, setRetention] = useState<RetentionOption>("7d");
   const [uploading, setUploading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getFileError = (selectedFile: File | null) => {
     if (!selectedFile) {
       return "請選擇 PDF 檔案";
+    }
+    const isPdfType = selectedFile.type === "application/pdf";
+    const isPdfName = selectedFile.name.toLowerCase().endsWith(".pdf");
+    if (!isPdfType && !isPdfName) {
+      return "僅支援 PDF 檔案";
     }
     if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
       return "檔案超過 20MB，請重新選擇";
@@ -33,9 +43,7 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
     return null;
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0] ?? null;
-
+  const applySelectedFile = (selectedFile: File | null) => {
     if (!selectedFile) {
       setFile(null);
       setFileError(null);
@@ -47,13 +55,26 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
       setFile(null);
       setFileError(nextFileError);
       setSubmitError(null);
-      event.currentTarget.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
     }
 
     setFile(selectedFile);
     setFileError(null);
     setSubmitError(null);
+  };
+
+  useImperativeHandle(ref, () => ({
+    handleExternalFile: (selectedFile: File) => {
+      applySelectedFile(selectedFile);
+    }
+  }));
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+    applySelectedFile(selectedFile);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -100,17 +121,56 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
   };
 
   const errorMessage = fileError ?? submitError;
+  const selectedFileLabel = file
+    ? `${file.name}（${(file.size / 1024 / 1024).toFixed(1)} MB）`
+    : null;
+  const hasSelectedFile = Boolean(file);
+
+  const handleClearFile = () => {
+    setFile(null);
+    setFileError(null);
+    setSubmitError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-700">PDF 檔案</label>
+        {hasSelectedFile ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm">
+            <span className="flex-1 truncate">{selectedFileLabel}</span>
+            <button
+              className="text-sm font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              更換檔案
+            </button>
+            <button
+              className="text-sm font-medium text-red-600 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              type="button"
+              onClick={handleClearFile}
+              disabled={uploading}
+            >
+              移除
+            </button>
+          </div>
+        ) : null}
         <input
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className={
+            hasSelectedFile
+              ? "sr-only"
+              : "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+          }
           type="file"
           accept=".pdf"
           onChange={handleFileChange}
           disabled={uploading}
+          ref={fileInputRef}
         />
         <p className="text-xs text-slate-500">僅限 PDF，檔案大小上限 20MB。</p>
       </div>
@@ -153,4 +213,6 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
       </button>
     </form>
   );
-}
+});
+
+UploadForm.displayName = "UploadForm";

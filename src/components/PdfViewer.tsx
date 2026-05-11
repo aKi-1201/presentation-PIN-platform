@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type TouchEvent, type WheelEvent } from "react";
+import Link from "next/link";
 import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 
@@ -17,6 +18,9 @@ const getWorkerSrc = () => {
 };
 
 const DEFAULT_SCALE = 1.5;
+const THUMBNAIL_SCALE = 0.25;
+const THUMBNAIL_HEIGHT = 96;
+const CONTROLS_REVEAL_ZONE_PX = 10;
 type PdfRenderTask = ReturnType<PDFPageProxy["render"]>;
 
 export function PdfViewer({ code }: PdfViewerProps) {
@@ -26,10 +30,17 @@ export function PdfViewer({ code }: PdfViewerProps) {
   const [scale, setScale] = useState(DEFAULT_SCALE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [controlsVisible, setControlsVisible] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const filmstripRef = useRef<HTMLDivElement | null>(null);
   const pdfRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<PdfRenderTask | null>(null);
+  const hideControlsTimeoutRef = useRef<number | null>(null);
+  const thumbnailRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const thumbnailButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const thumbnailRenderTasksRef = useRef<Map<number, PdfRenderTask>>(new Map());
+  const renderedThumbnailsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     let canceled = false;
@@ -50,6 +61,10 @@ export function PdfViewer({ code }: PdfViewerProps) {
         }
 
         pdfRef.current = pdf;
+        renderedThumbnailsRef.current.clear();
+        thumbnailRenderTasksRef.current.forEach((task) => task.cancel());
+        thumbnailRenderTasksRef.current.clear();
+        thumbnailButtonRefs.current.clear();
         setTotalPages(pdf.numPages);
         setCurrentPage(1);
         setScale(DEFAULT_SCALE);
@@ -69,6 +84,11 @@ export function PdfViewer({ code }: PdfViewerProps) {
       canceled = true;
       renderTaskRef.current?.cancel();
       renderTaskRef.current = null;
+      thumbnailRenderTasksRef.current.forEach((task) => task.cancel());
+      thumbnailRenderTasksRef.current.clear();
+      renderedThumbnailsRef.current.clear();
+      thumbnailRefs.current.clear();
+      thumbnailButtonRefs.current.clear();
       void pdfRef.current?.destroy?.();
       pdfRef.current = null;
     };
@@ -143,11 +163,89 @@ export function PdfViewer({ code }: PdfViewerProps) {
     }
   }, [currentPage, scale]);
 
+  const renderThumbnail = useCallback(async (pageNumber: number, canvas: HTMLCanvasElement) => {
+    if (!pdfRef.current || renderedThumbnailsRef.current.has(pageNumber)) {
+      return;
+    }
+
+    if (thumbnailRenderTasksRef.current.has(pageNumber)) {
+      thumbnailRenderTasksRef.current.get(pageNumber)?.cancel();
+      thumbnailRenderTasksRef.current.delete(pageNumber);
+    }
+
+    const page = await pdfRef.current.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: THUMBNAIL_SCALE });
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const cssWidth = (viewport.width / viewport.height) * THUMBNAIL_HEIGHT;
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${THUMBNAIL_HEIGHT}px`;
+
+    const renderTask = page.render({ canvasContext: context, viewport });
+    thumbnailRenderTasksRef.current.set(pageNumber, renderTask);
+
+    try {
+      await renderTask.promise;
+      renderedThumbnailsRef.current.add(pageNumber);
+    } catch (error: unknown) {
+      if (typeof error === "object" && error && "name" in error) {
+        if ((error as { name: string }).name !== "RenderingCancelledException") {
+          console.error(error);
+        }
+      } else {
+        console.error(error);
+      }
+    } finally {
+      if (thumbnailRenderTasksRef.current.get(pageNumber) === renderTask) {
+        thumbnailRenderTasksRef.current.delete(pageNumber);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading && !error && pdfRef.current) {
       void renderPage();
     }
   }, [loading, error, renderPage]);
+
+  useEffect(() => {
+    if (loading || error || !pdfRef.current || !totalPages || isFullscreen) {
+      return;
+    }
+
+    let canceled = false;
+
+    const renderThumbnails = async () => {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+        if (canceled) {
+          return;
+        }
+
+        const canvas = thumbnailRefs.current.get(pageNumber);
+        if (!canvas) {
+          continue;
+        }
+
+        if (!renderedThumbnailsRef.current.has(pageNumber)) {
+          await renderThumbnail(pageNumber, canvas);
+        }
+      }
+    };
+
+    void renderThumbnails();
+
+    return () => {
+      canceled = true;
+    };
+  }, [loading, error, totalPages, isFullscreen, renderThumbnail]);
 
   const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => {
@@ -158,9 +256,113 @@ export function PdfViewer({ code }: PdfViewerProps) {
     });
   }, [totalPages]);
 
+  const setThumbnailRef = useCallback(
+    (pageNumber: number) => (node: HTMLCanvasElement | null) => {
+      if (node) {
+        thumbnailRefs.current.set(pageNumber, node);
+        renderedThumbnailsRef.current.delete(pageNumber);
+
+        if (!loading && !error && pdfRef.current && !isFullscreen) {
+          void renderThumbnail(pageNumber, node);
+        }
+
+        return;
+      }
+
+      thumbnailRefs.current.delete(pageNumber);
+      renderedThumbnailsRef.current.delete(pageNumber);
+
+      const task = thumbnailRenderTasksRef.current.get(pageNumber);
+      if (task) {
+        task.cancel();
+        thumbnailRenderTasksRef.current.delete(pageNumber);
+      }
+    },
+    [renderThumbnail, loading, error, isFullscreen]
+  );
+
+  const setThumbnailButtonRef = useCallback(
+    (pageNumber: number) => (node: HTMLButtonElement | null) => {
+      if (node) {
+        thumbnailButtonRefs.current.set(pageNumber, node);
+        return;
+      }
+
+      thumbnailButtonRefs.current.delete(pageNumber);
+    },
+    []
+  );
+
   const handlePrev = useCallback(() => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   }, []);
+
+  const scheduleHideControls = useCallback(() => {
+    if (!isFullscreen) {
+      return;
+    }
+
+    if (hideControlsTimeoutRef.current) {
+      window.clearTimeout(hideControlsTimeoutRef.current);
+    }
+
+    setControlsVisible(true);
+    hideControlsTimeoutRef.current = window.setTimeout(() => {
+      setControlsVisible(false);
+    }, 2500);
+  }, [isFullscreen]);
+
+  const handlePointerMove = useCallback(
+    (event: { clientY: number }) => {
+      if (!isFullscreen) {
+        return;
+      }
+
+      if (event.clientY < window.innerHeight - CONTROLS_REVEAL_ZONE_PX) {
+        return;
+      }
+
+      scheduleHideControls();
+    },
+    [isFullscreen, scheduleHideControls]
+  );
+
+  const handleTouchStart = useCallback(
+    (event: TouchEvent<HTMLDivElement>) => {
+      if (event.touches.length === 0) {
+        return;
+      }
+
+      handlePointerMove({ clientY: event.touches[0]?.clientY ?? 0 });
+    },
+    [handlePointerMove]
+  );
+
+  const handleThumbnailWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      if (isFullscreen) {
+        return;
+      }
+
+      const { deltaX, deltaY } = event;
+      if (Math.abs(deltaY) <= Math.abs(deltaX)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (deltaY > 0) {
+        goToNextPage();
+        return;
+      }
+
+      if (deltaY < 0) {
+        handlePrev();
+      }
+    },
+    [goToNextPage, handlePrev, isFullscreen]
+  );
 
   const handleToggleFullscreen = useCallback(() => {
     if (!containerRef.current) {
@@ -176,6 +378,10 @@ export function PdfViewer({ code }: PdfViewerProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isFullscreen) {
+        scheduleHideControls();
+      }
+
       if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
         goToNextPage();
@@ -191,7 +397,7 @@ export function PdfViewer({ code }: PdfViewerProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goToNextPage, handlePrev, handleToggleFullscreen]);
+  }, [goToNextPage, handlePrev, handleToggleFullscreen, isFullscreen, scheduleHideControls]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -205,6 +411,41 @@ export function PdfViewer({ code }: PdfViewerProps) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, [updateScaleForFullscreen]);
 
+  useEffect(() => {
+    if (!isFullscreen) {
+      setControlsVisible(true);
+
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+
+      return;
+    }
+
+    scheduleHideControls();
+
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        window.clearTimeout(hideControlsTimeoutRef.current);
+        hideControlsTimeoutRef.current = null;
+      }
+    };
+  }, [isFullscreen, scheduleHideControls]);
+
+  useEffect(() => {
+    if (isFullscreen || !filmstripRef.current) {
+      return;
+    }
+
+    const target = thumbnailButtonRefs.current.get(currentPage);
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [currentPage, isFullscreen]);
+
   return (
     <div
       className={
@@ -213,7 +454,17 @@ export function PdfViewer({ code }: PdfViewerProps) {
           : "relative flex min-h-screen flex-col items-center gap-4 p-6"
       }
       ref={containerRef}
+      onMouseMove={handlePointerMove}
+      onTouchStart={handleTouchStart}
     >
+      <Link
+        className={`absolute top-6 left-6 z-50 text-xl font-semibold uppercase tracking-[0.3em] text-white/80 transition hover:text-white ${
+          isFullscreen ? "hidden" : "block"
+        }`}
+        href="/"
+      >
+        ZLIDE
+      </Link>
       <div
         className={
           isFullscreen
@@ -224,37 +475,82 @@ export function PdfViewer({ code }: PdfViewerProps) {
         {loading && <p className="text-white">載入中...</p>}
         {error && <p className="text-red-400">{error}</p>}
         {!loading && !error && (
-          <div
-            className={`flex items-center justify-center text-white ${
-              isFullscreen ? "h-full w-full" : "h-[70vh]"
-            }`}
-            onClick={goToNextPage}
-          >
-            <canvas
-              ref={canvasRef}
-              className={`object-contain max-w-full ${
-                isFullscreen ? "max-h-screen" : "max-h-[calc(100vh-100px)]"
+          <>
+            <div
+              className={`flex items-center justify-center text-white ${
+                isFullscreen ? "h-full w-full" : "h-[70vh]"
               }`}
-            />
-          </div>
+              onClick={goToNextPage}
+            >
+              <canvas
+                ref={canvasRef}
+                className={`object-contain max-w-full ${
+                  isFullscreen ? "max-h-screen" : "max-h-[calc(100vh-100px)]"
+                }`}
+              />
+            </div>
+            {!isFullscreen && totalPages && (
+              <div
+                className="flex w-full gap-4 overflow-x-auto px-2 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                onWheel={handleThumbnailWheel}
+                ref={filmstripRef}
+              >
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const pageNumber = index + 1;
+                  const isActive = pageNumber === currentPage;
+
+                  return (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNumber)}
+                      ref={setThumbnailButtonRef(pageNumber)}
+                      className={
+                        isActive
+                          ? "opacity-100 ring-2 ring-white ring-offset-2 ring-offset-black"
+                          : "opacity-40 transition-all hover:opacity-100"
+                      }
+                    >
+                      <canvas
+                        ref={setThumbnailRef(pageNumber)}
+                        className="h-24 object-contain"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <div
-        className="absolute bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-black/60 px-4 py-2 text-white backdrop-blur-sm"
+        className={`absolute bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-full px-6 py-3 text-white/90 backdrop-blur-md transition-opacity ${
+          isFullscreen
+            ? "border border-white/20 bg-black/60 shadow-lg shadow-black/40"
+            : "border border-white/10 bg-white/10"
+        } ${isFullscreen && !controlsVisible ? "pointer-events-none opacity-0" : "opacity-100"}`}
         onClick={(event) => event.stopPropagation()}
       >
-        <button className="rounded border px-4 py-2" type="button" onClick={handlePrev}>
+        <button
+          className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
+          type="button"
+          onClick={handlePrev}
+        >
           上一頁
         </button>
-        <span>
+        <span className="text-sm font-medium text-white/80">
           {currentPage} / {totalPages ?? "-"}
         </span>
-        <button className="rounded border px-4 py-2" type="button" onClick={goToNextPage}>
+        <button
+          className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
+          type="button"
+          onClick={goToNextPage}
+        >
           下一頁
         </button>
         <button
-          className="rounded border px-4 py-2"
+          className="rounded-full px-4 py-2 text-sm text-white transition-all hover:bg-white/20"
           type="button"
           onClick={handleToggleFullscreen}
         >

@@ -20,6 +20,11 @@ Temporary PDF access via short PIN codes.
 - `npm run prisma:migrate`
 - `npm run cleanup`
 
+## Deployment (Production)
+1. Set `APP_URL=https://zlide.app` in `.env` or via Docker Compose.
+2. Ensure `Caddyfile` targets `zlide.app`.
+3. Run `docker compose up -d --build`.
+
 ## Notes
 - Uploads are stored under `/data/uploads` (not public).
 - Management tokens are stored as hashes only.

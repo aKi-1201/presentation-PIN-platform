@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { validatePdfFile } from "@/lib/file-validator";
 import { generateUniqueCode } from "@/lib/code";
-import { generateManagementToken, hashToken } from "@/lib/token";
 import { calculateExpiresAt } from "@/lib/retention";
 import { savePdf } from "@/lib/storage";
 import type { ApiError, UploadResponse } from "@/types/presentation";
@@ -60,8 +59,6 @@ export async function POST(request: Request) {
     }
 
     const publicCode = await generateUniqueCode(prisma);
-    const managementToken = generateManagementToken();
-    const managementTokenHash = hashToken(managementToken);
     const expiresAt = calculateExpiresAt(retentionResult.data.retention);
     const presentationId = crypto.randomUUID();
     const storagePath = await savePdf(file, presentationId);
@@ -70,7 +67,6 @@ export async function POST(request: Request) {
       data: {
         id: presentationId,
         publicCode,
-        managementTokenHash,
         originalFilename: file.name,
         storagePath,
         fileSizeBytes: BigInt(file.size),
@@ -83,7 +79,6 @@ export async function POST(request: Request) {
     const response: UploadResponse = {
       code: publicCode,
       viewUrl: `/p/${publicCode}`,
-      manageUrl: `/manage/${managementToken}`,
       expiresAt: expiresAt.toISOString()
     };
 
