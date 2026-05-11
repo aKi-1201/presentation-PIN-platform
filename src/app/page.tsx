@@ -83,7 +83,7 @@ export default function HomePage() {
           <UploadForm ref={uploadFormRef} onSuccess={handleSuccess} isDragging={isDragging} />
         </div>
         <p className="text-xs text-slate-400 sm:text-sm">
-          檔案將於指定期限後自動刪除。請勿上傳高度機密、敏感個資或未授權公開的文件。
+          Zlide 只暫存你的簡報，並會在期限後自動刪除。
         </p>
       </section>
     </main>
