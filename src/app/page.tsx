@@ -57,7 +57,7 @@ export default function HomePage() {
       >
         Zlide
       </Link>
-      <section className="w-full max-w-3xl text-center">
+      <section className="mx-auto w-full max-w-lg text-center">
         <h1 className="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">輸入簡報代碼</h1>
         <p className="mt-3 text-sm text-slate-400 sm:text-base">
           不用 USB，不用登入雲端硬碟。輸入代碼即可在任何電腦開啟簡報。
@@ -67,7 +67,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="w-full max-w-3xl space-y-4">
+      <section className="mx-auto w-full max-w-lg space-y-4">
         <div
           className={uploadCardClasses}
           onDragOver={handleDragOver}
