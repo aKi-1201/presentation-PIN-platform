@@ -7,7 +7,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Presentation PIN Platform",
+  title: "Zlide",
   description: "Temporary presentation access platform."
 };
 

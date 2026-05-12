@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent, type WheelEvent } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 import toast from "react-hot-toast";
@@ -634,7 +634,7 @@ export function PdfViewer({ code, expiresAt }: PdfViewerProps) {
             title="分享"
             aria-label="分享"
           >
-            <Share2 className="h-4 w-4" aria-hidden="true" />
+            <Share className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
         <button

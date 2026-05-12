@@ -21,7 +21,7 @@ export function CodeInput({ variant = "default", autoFocus = false }: CodeInputP
   const containerClassName = isHero ? "w-full space-y-6" : "space-y-4";
   const labelClassName = isHero ? "sr-only" : "block text-sm font-medium text-slate-700";
   const baseInputClassName = isHero
-    ? "w-full h-16 rounded-2xl border-2 border-slate-200 bg-white px-14 text-center text-3xl font-semibold tracking-[0.4em] text-slate-900 outline-none transition-all focus:border-slate-400 focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+    ? "w-full rounded-full border-2 border-slate-200 bg-white px-14 pt-3 pb-4 leading-none text-center text-3xl font-semibold tracking-[0.4em] text-slate-900 outline-none transition-all focus:border-slate-400 focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
     : "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-70";
   const placeholderClassName = isHero
     ? "placeholder:text-xl placeholder:tracking-[0.3em]"

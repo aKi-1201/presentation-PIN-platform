@@ -13,10 +13,8 @@ export default function HomePage() {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleSuccess = (result: UploadResponse) => {
-    const manageToken = result.manageUrl.split("/").filter(Boolean).pop() ?? "";
     const params = new URLSearchParams({
       code: result.code,
-      manageToken,
       expiresAt: result.expiresAt
     });
 
