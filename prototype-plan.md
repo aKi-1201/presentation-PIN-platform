@@ -504,7 +504,7 @@ Content-Type: multipart/form-data
 
 ```text
 file: PDF
-retention: 1h | 24h | 3d | 7d
+retention: 24h | 3d | 7d
 ```
 
 #### Response
@@ -869,7 +869,6 @@ expires_at > now()
 - [ ] 不顯示管理連結
 - [ ] 不顯示刪除連結
 - [ ] 可複製簡報代碼
-- [ ] 可複製觀看連結
 - [ ] 可透過首頁輸入簡報代碼開啟
 - [ ] 可透過 `/p/[code]` 直接開啟
 - [ ] PDF 正常顯示
@@ -879,7 +878,6 @@ expires_at > now()
 
 ### Expiration / Cleanup
 
-- [ ] 1 小時保存可正常計算
 - [ ] 24 小時保存可正常計算
 - [ ] 3 天保存可正常計算
 - [ ] 7 天保存可正常計算
@@ -1010,7 +1008,7 @@ MAX_UPLOAD_SIZE_MB=20
 CODE_LENGTH=6
 
 # Retention
-DEFAULT_RETENTION=7d
+DEFAULT_RETENTION=3d
 ```
 
 ---

@@ -57,6 +57,12 @@ https://zlide.app
 
 本階段目標是開發 Prototype / Release Candidate，不是完整商業產品。
 
+### 2.1 品牌與 CIS 規範 (Brand Guidelines)
+
+- **Logo 顯示**：永遠使用全大寫 **`ZLIDE`**，搭配無襯線字體與寬字距（`uppercase tracking-[0.25em]`）。全站統一固定於畫面左上角 (`fixed top-6 left-6`)。
+- **內文與文案**：在句子、標題中提及產品時，使用首字母大寫 **`Zlide`**。
+- **網址與技術層面**：使用全小寫 **`zlide.app`**。
+
 ---
 
 ## 3. 目前產品定位
@@ -806,7 +812,7 @@ MAX_UPLOAD_SIZE_MB=20
 CODE_LENGTH=6
 
 # Retention
-DEFAULT_RETENTION=7d
+DEFAULT_RETENTION=3d
 ```
 
 不要將 `.env` commit 到 repository。
