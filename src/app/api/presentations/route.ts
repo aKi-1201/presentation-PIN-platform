@@ -10,7 +10,7 @@ import { savePdf } from "@/lib/storage";
 import type { ApiError, UploadResponse } from "@/types/presentation";
 
 const retentionSchema = z.object({
-  retention: z.enum(["1h", "24h", "3d", "7d"])
+  retention: z.enum(["24h", "3d", "7d"]).default("3d")
 });
 
 const MAX_UPLOAD_SIZE_MB = Number(process.env.MAX_UPLOAD_SIZE_MB ?? "20");
@@ -36,15 +36,20 @@ export async function POST(request: Request) {
     const retentionValue = form.get("retention");
     const file = form.get("file");
 
-    if (typeof retentionValue !== "string") {
-      return NextResponse.json({ error: "缺少參數" }, { status: 400 });
+    let retentionInput: { retention?: string };
+    if (retentionValue === null) {
+      retentionInput = {};
+    } else if (typeof retentionValue === "string") {
+      retentionInput = { retention: retentionValue };
+    } else {
+      return NextResponse.json({ error: "保存期限無效" }, { status: 400 });
     }
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "缺少檔案" }, { status: 400 });
     }
 
-    const retentionResult = retentionSchema.safeParse({ retention: retentionValue });
+    const retentionResult = retentionSchema.safeParse(retentionInput);
     if (!retentionResult.success) {
       return NextResponse.json({ error: "保存期限無效" }, { status: 400 });
     }

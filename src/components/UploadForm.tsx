@@ -14,7 +14,6 @@ export type UploadFormHandle = {
 };
 
 const RETENTION_OPTIONS: { label: string; value: RetentionOption }[] = [
-  { label: "1 小時", value: "1h" },
   { label: "24 小時", value: "24h" },
   { label: "3 天", value: "3d" },
   { label: "7 天", value: "7d" }
@@ -25,7 +24,7 @@ const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 export const UploadForm = forwardRef<UploadFormHandle, UploadFormProps>(
   ({ onSuccess, isDragging = false }, ref) => {
     const [file, setFile] = useState<File | null>(null);
-    const [retention, setRetention] = useState<RetentionOption>("7d");
+    const [retention, setRetention] = useState<RetentionOption>("3d");
     const [uploading, setUploading] = useState(false);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);

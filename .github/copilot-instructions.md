@@ -285,12 +285,11 @@ Prototype 支援：
 
 ```yaml
 retention_options:
-  - 1h
   - 24h
   - 3d
   - 7d
 
-default_retention: 7d
+default_retention: 3d
 ```
 
 ### 7.6 登入策略

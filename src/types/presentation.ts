@@ -1,6 +1,6 @@
 export type PresentationStatus = "active" | "deleted";
 
-export type RetentionOption = "1h" | "24h" | "3d" | "7d";
+export type RetentionOption = "24h" | "3d" | "7d";
 
 export interface Presentation {
   id: string;
