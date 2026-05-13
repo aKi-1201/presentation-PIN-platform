@@ -4,11 +4,19 @@ import { headers } from "next/headers";
 import type { PresentationMetaResponse } from "@/types/presentation";
 
 export const metadata: Metadata = {
+  title: "Zlide 簡報",
   robots: {
     index: false,
-    follow: false
-  }
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
+
 
 interface PresentationPageProps {
   params: {
