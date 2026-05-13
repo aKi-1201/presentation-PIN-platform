@@ -1,0 +1,11 @@
+# 忽略資料夾（這些是運行時產生的，編譯時不需要）
+data/
+uploads/
+node_modules/
+.next/
+.git/
+
+# 忽略環境變數與日誌
+.env
+*.log
+npm-debug.log*
