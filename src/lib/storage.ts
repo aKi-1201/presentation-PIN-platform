@@ -1,15 +1,15 @@
 import path from "path";
 import fs from "fs/promises";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "/data/uploads";
+const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "/app/uploads";
 
 // Ensure UPLOAD_DIR exists.
 export async function ensureUploadDir(): Promise<void> {
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
 }
 
-// Save PDF to /data/uploads/{presentationId}.pdf
-// Return storagePath (relative or absolute).
+// Save PDF to UPLOAD_DIR/{presentationId}.pdf
+// Return the absolute storagePath used for persistence.
 export async function savePdf(file: File, presentationId: string): Promise<string> {
   await ensureUploadDir();
 
@@ -19,7 +19,7 @@ export async function savePdf(file: File, presentationId: string): Promise<strin
   const bytes = new Uint8Array(arrayBuffer);
 
   await fs.writeFile(storagePath, bytes);
-  return filename;
+  return storagePath;
 }
 
 // Delete PDF, ignore missing file errors.
