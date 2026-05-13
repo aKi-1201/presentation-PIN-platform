@@ -467,7 +467,7 @@ https://zlide.app/p/K7P9Q2
 
 - 驗證簡報代碼
 - 檢查是否過期
-- 檢查狀態是否 active
+- 檢查狀態是否 ACTIVE
 - 載入 PDF
 - 顯示 PDF viewer
 
@@ -532,7 +532,7 @@ GET /api/presentations/[code]
   "code": "K7P9Q2",
   "fileName": "demo.pdf",
   "expiresAt": "2026-05-17T00:00:00+08:00",
-  "status": "active"
+  "status": "ACTIVE"
 }
 ```
 
@@ -554,7 +554,7 @@ GET /api/presentations/[code]/file
 
 ```text
 code 是否存在
-status 是否 active
+status 是否 ACTIVE
 expires_at 是否尚未過期
 檔案是否存在
 ```
@@ -618,7 +618,7 @@ model Presentation {
   fileSizeBytes    BigInt    @map("file_size_bytes")
   mimeType         String    @map("mime_type")
 
-  status           String    @default("active")
+  status           String    @default("ACTIVE")
 
   expiresAt        DateTime  @map("expires_at")
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -638,8 +638,8 @@ model Presentation {
 
 ```yaml
 status:
-  active: 可存取
-  deleted: 已由 cleanup job 清除或標記刪除
+  ACTIVE: 可存取
+  EXPIRED: 已由 cleanup job 清除或標記刪除
 ```
 
 過期可透過 `expires_at < now()` 判斷，不一定需要額外存 `expired` 狀態。
@@ -738,7 +738,7 @@ export const metadata = {
 每次查詢或讀取 PDF 都檢查：
 
 ```text
-status = active
+status = ACTIVE
 expires_at > now()
 ```
 
@@ -756,16 +756,16 @@ expires_at > now()
 #### Cleanup 流程
 
 ```text
-1. 查詢 expires_at < now() 且 status = active 的資料
+1. 查詢 expires_at < now() 且 status = ACTIVE 的資料
 2. 刪除 storage_path 對應 PDF
-3. 更新 status = deleted
+3. 更新 status = EXPIRED
 4. 寫入 deleted_at
 ```
 
 #### Oracle VM cron 建議
 
 ```cron
-0 * * * * cd /opt/zlide && docker compose exec -T app npm run cleanup:expired >> /opt/zlide/logs/cleanup.log 2>&1
+0 * * * * cd /home/ubuntu/presentation-PIN-platform && docker compose exec -T app npx --yes tsx scripts/cleanup-expired.ts >> /home/ubuntu/presentation-PIN-platform/cron-cleanup.log 2>&1
 ```
 
 ---
@@ -832,7 +832,7 @@ expires_at > now()
 - 建立 `cleanup-expired` script
 - 查詢過期 active presentations
 - 刪除 PDF 檔案
-- 更新 status = deleted
+- 更新 status = EXPIRED
 - 寫入 deleted_at
 - 設定 cron
 
@@ -843,7 +843,7 @@ expires_at > now()
 - PDF file API rate limit
 - noindex / nofollow
 - 錯誤訊息模糊化
-- PDF magic bytes 檢查
+- PDF magic bytes 檢查 (需使用 Uint8Array 處理)
 
 ### Phase 8：整合測試與體驗修正
 
@@ -1001,7 +1001,7 @@ APP_URL=https://zlide.app
 DATABASE_URL=postgresql://app:password@db:5432/zlide
 
 # Upload
-UPLOAD_DIR=/data/uploads
+UPLOAD_DIR=/app/uploads
 MAX_UPLOAD_SIZE_MB=20
 
 # Code
@@ -1024,11 +1024,11 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://app:password@db:5432/zlide
-      UPLOAD_DIR: /data/uploads
+      UPLOAD_DIR: /app/uploads
       MAX_UPLOAD_SIZE_MB: 20
       APP_URL: https://zlide.app
     volumes:
-      - ./data/uploads:/data/uploads
+      - ./data/uploads:/app/uploads
     depends_on:
       - db
     expose:
