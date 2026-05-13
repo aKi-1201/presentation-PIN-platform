@@ -52,11 +52,16 @@ export default function HomePage() {
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-10 px-6 py-10 sm:gap-12 sm:px-8 sm:py-14 lg:py-16">
       <Link
-        className="fixed top-6 left-6 z-50 text-2xl font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-900"
+        className="fixed top-6 left-6 z-50 flex items-baseline gap-2 text-2xl font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-900"
         href="/"
       >
-        Zlide
+        <span>Zlide</span>
+        
+        <span className="text-[10px] tracking-normal text-teal-600 font-bold self-center">
+          BETA
+        </span>
       </Link>
+
       <section className="mx-auto w-full max-w-lg text-center">
         <h1 className="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">輸入簡報代碼</h1>
         <p className="mt-3 text-sm text-slate-400 sm:text-base">
