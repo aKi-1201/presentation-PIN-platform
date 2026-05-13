@@ -26,20 +26,6 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: "/"
-  },
-  openGraph: {
-    title: "Zlide - 上傳簡報，取得代碼",
-    description:
-      "上傳 PDF 簡報，取得簡報代碼，到任何電腦輸入代碼即可開始簡報。",
-    siteName: "Zlide",
-    type: "website",
-    url: "/"
-  },
-  twitter: {
-    card: "summary",
-    title: "Zlide - 上傳簡報，取得代碼",
-    description:
-      "上傳 PDF 簡報，取得簡報代碼，到任何電腦輸入代碼即可開始簡報。"
   }
 };
 
