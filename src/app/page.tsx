@@ -57,7 +57,7 @@ export default function HomePage() {
       >
         <span>Zlide</span>
         
-        <span className="text-[10px] tracking-normal text-teal-600 font-bold self-center">
+        <span className="text-[10px] tracking-normal text-teal-600 font-bold mt-1">
           BETA
         </span>
       </Link>
