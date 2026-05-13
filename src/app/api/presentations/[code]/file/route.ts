@@ -1,12 +1,12 @@
 import fs from "fs";
 import fsPromises from "fs/promises";
+import path from "path";
 import { Readable } from "stream";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { isPresentationAccessible } from "@/lib/presentation";
-import { resolveStoragePath } from "@/lib/storage";
 import type { ApiError } from "@/types/presentation";
 
 const paramsSchema = z.object({
@@ -16,6 +16,8 @@ const paramsSchema = z.object({
 const INVALID_CODE_ERROR: ApiError = { error: "代碼無效或已過期" };
 
 export const runtime = "nodejs";
+
+const UPLOAD_DIR = process.env.UPLOAD_DIR ?? "/app/uploads";
 
 function getClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -49,7 +51,8 @@ export async function GET(
       return NextResponse.json(INVALID_CODE_ERROR, { status: 404 });
     }
 
-    const absolutePath = resolveStoragePath(presentation.storagePath);
+    const filename = path.basename(presentation.storagePath);
+    const absolutePath = path.join(UPLOAD_DIR, filename);
 
     let stat;
     try {
