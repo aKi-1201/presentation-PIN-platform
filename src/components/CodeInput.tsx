@@ -53,7 +53,7 @@ export function CodeInput({ variant = "default", autoFocus = false }: CodeInputP
       setIsShaking(true);
       shakeTimeoutRef.current = window.setTimeout(() => {
         setIsShaking(false);
-      }, 450);
+      }, 450) as any;
     });
   };
 
