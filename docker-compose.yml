@@ -5,7 +5,7 @@ services:
       - NODE_ENV=production
       - APP_URL=https://zlide.app
     volumes:
-      - ./data/uploads:/data/uploads
+      - ./data/uploads:/app/uploads
     env_file:
       - .env
     depends_on:
