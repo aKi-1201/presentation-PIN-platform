@@ -15,9 +15,10 @@ export async function savePdf(file: File, presentationId: string): Promise<strin
 
   const filename = `${presentationId}.pdf`;
   const storagePath = path.join(UPLOAD_DIR, filename);
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
 
-  await fs.writeFile(storagePath, buffer);
+  await fs.writeFile(storagePath, bytes);
   return filename;
 }
 
