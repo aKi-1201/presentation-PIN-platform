@@ -52,12 +52,12 @@ export default function HomePage() {
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-10 px-6 py-10 sm:gap-12 sm:px-8 sm:py-14 lg:py-16">
       <Link
-        className="fixed top-6 left-6 z-50 flex items-baseline gap-2 text-2xl font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-900"
+        className="fixed top-6 left-6 z-50 flex items-start gap-1 text-2xl font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-900"
         href="/"
       >
         <span>Zlide</span>
-        
-        <span className="text-[12px] tracking-normal text-teal-600 font-bold mt-1">
+        {/* 使用 items-start 對齊頂端，並透過 mt-1 微調與大寫字母頂部的距離 */}
+        <span className="text-[10px] tracking-normal text-teal-600 font-bold mt-1">
           BETA
         </span>
       </Link>
