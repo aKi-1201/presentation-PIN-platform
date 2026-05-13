@@ -158,7 +158,7 @@ database:
 
 storage:
   type: Local private filesystem for prototype
-  path: /data/uploads
+  path: /app/uploads
 
 infrastructure:
   cloud: Oracle Cloud Always Free VM.Standard.A1.Flex 2 OCPU / 12GB
@@ -390,6 +390,11 @@ Do not create `/manage/[token]` routes for the Prototype unless explicitly reque
 建議 Prisma model：
 
 ```prisma
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
+}
+
 model Presentation {
   id               String    @id @default(uuid()) @db.Uuid
 
@@ -401,7 +406,7 @@ model Presentation {
   fileSizeBytes    BigInt    @map("file_size_bytes")
   mimeType         String    @map("mime_type")
 
-  status           String    @default("active")
+  status           String    @default("ACTIVE")
 
   expiresAt        DateTime  @map("expires_at")
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -420,7 +425,7 @@ model Presentation {
 狀態值：
 
 ```ts
-type PresentationStatus = "active" | "deleted";
+type PresentationStatus = "ACTIVE" | "EXPIRED";
 ```
 
 過期狀態不一定需要存入 DB，可透過 `expiresAt < now` 判斷。
@@ -480,7 +485,7 @@ GET /api/presentations/[code]
   "code": "K7P9Q2",
   "fileName": "demo.pdf",
   "expiresAt": "2026-05-17T00:00:00+08:00",
-  "status": "active"
+  "status": "ACTIVE"
 }
 ```
 
@@ -501,7 +506,7 @@ GET /api/presentations/[code]/file
 必須由後端檢查：
 
 - `publicCode` 是否存在
-- `status === "active"`
+- `status === "ACTIVE"`
 - `expiresAt > now`
 - `storagePath` 對應檔案是否存在
 
@@ -533,7 +538,7 @@ public/uploads
 應放在：
 
 ```text
-/data/uploads
+/app/uploads
 ```
 
 並只能透過：
@@ -555,6 +560,8 @@ public/uploads
 - magic bytes 以 `%PDF` 開頭
 
 不要只依賴前端檢查。
+
+必須使用 Uint8Array 來讀取 Magic bytes 與寫入檔案，避免 Next.js standalone 模式下的 Buffer 型別衝突。
 
 ### 12.3 簡報代碼安全
 
@@ -649,7 +656,7 @@ Prototype 階段 PDF 顯示應盡量依賴瀏覽器端 PDF.js。
 每次查詢 metadata 或讀取 PDF 時，都必須檢查：
 
 ```ts
-presentation.status === "active"
+presentation.status === "ACTIVE"
 presentation.expiresAt > new Date()
 ```
 
@@ -672,9 +679,9 @@ scripts/cleanup-expired.ts
 流程：
 
 ```text
-1. 查詢 expiresAt < now 且 status = active 的簡報
+1. 查詢 expiresAt < now 且 status = ACTIVE 的簡報
 2. 刪除 storagePath 對應 PDF
-3. 更新 status = deleted
+3. 更新 status = EXPIRED
 4. 寫入 deletedAt
 5. 輸出 cleanup log
 ```
@@ -684,7 +691,7 @@ scripts/cleanup-expired.ts
 Oracle VM cron 建議：
 
 ```cron
-0 * * * * cd /opt/zlide && docker compose exec -T app npm run cleanup:expired >> /opt/zlide/logs/cleanup.log 2>&1
+0 * * * * cd /home/ubuntu/presentation-PIN-platform && docker compose exec -T app npx --yes tsx scripts/cleanup-expired.ts >> /home/ubuntu/presentation-PIN-platform/cron-cleanup.log 2>&1
 ```
 
 ---
@@ -805,7 +812,7 @@ APP_URL=http://localhost:3000
 DATABASE_URL=postgresql://app:password@localhost:5432/zlide
 
 # Upload
-UPLOAD_DIR=/data/uploads
+UPLOAD_DIR=/app/uploads
 MAX_UPLOAD_SIZE_MB=20
 
 # Code
@@ -839,7 +846,7 @@ PDF upload folder 必須使用 volume 掛載：
 
 ```yaml
 volumes:
-  - ./data/uploads:/data/uploads
+  - ./data/uploads:/app/uploads
 ```
 
 PostgreSQL data 必須持久化：
@@ -858,6 +865,8 @@ zlide.app {
   reverse_proxy app:3000
 }
 ```
+
+Dockerfile 需安裝 openssl libssl3，並在 final stage 手動執行 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma 以防止 ARM 引擎遺失。
 
 ---
 
