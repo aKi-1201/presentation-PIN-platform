@@ -1,4 +1,4 @@
-export type PresentationStatus = "active" | "deleted";
+export type PresentationStatus = "ACTIVE" | "EXPIRED";
 
 export type RetentionOption = "24h" | "3d" | "7d";
 

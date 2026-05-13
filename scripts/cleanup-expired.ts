@@ -2,11 +2,17 @@ import { prisma } from "../src/lib/db";
 import { deletePdf } from "../src/lib/storage";
 
 async function main() {
+  const startedAt = Date.now();
+  console.log(`Cleanup started at ${new Date(startedAt).toISOString()}`);
+
+  let cleaned = 0;
+  let failed = 0;
+
   try {
     const now = new Date();
     const expiredPresentations = await prisma.presentation.findMany({
       where: {
-        status: "active",
+        status: "ACTIVE",
         expiresAt: { lt: now }
       },
       select: {
@@ -16,16 +22,13 @@ async function main() {
       }
     });
 
-    let cleaned = 0;
-    let failed = 0;
-
     for (const presentation of expiredPresentations) {
       try {
         await deletePdf(presentation.storagePath);
         await prisma.presentation.update({
           where: { id: presentation.id },
           data: {
-            status: "deleted",
+            status: "EXPIRED",
             deletedAt: now
           }
         });
@@ -42,8 +45,11 @@ async function main() {
       }
     }
 
-    console.log(`Cleanup finished. cleaned=${cleaned} failed=${failed}`);
   } finally {
+    const finishedAt = Date.now();
+    console.log(
+      `Cleanup finished at ${new Date(finishedAt).toISOString()} durationMs=${finishedAt - startedAt} cleaned=${cleaned} failed=${failed}`
+    );
     await prisma.$disconnect();
   }
 }

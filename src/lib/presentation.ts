@@ -1,9 +1,9 @@
 import type { Presentation } from "@/types/presentation";
 
-// Check if presentation is accessible (status === "active" and expiresAt > now).
+// Check if presentation is accessible (status === "ACTIVE" and expiresAt > now).
 export function isPresentationAccessible(presentation: Presentation): boolean {
   return (
-    presentation.status === "active" &&
+    presentation.status === "ACTIVE" &&
     presentation.expiresAt.getTime() > Date.now()
   );
 }

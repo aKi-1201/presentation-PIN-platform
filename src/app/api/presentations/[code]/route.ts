@@ -47,7 +47,7 @@ export async function GET(
       code,
       fileName: presentation.originalFilename,
       expiresAt: presentation.expiresAt.toISOString(),
-      status: presentation.status as "active" | "deleted"
+      status: presentation.status as PresentationMetaResponse["status"]
     };
 
     return NextResponse.json(response, { status: 200 });

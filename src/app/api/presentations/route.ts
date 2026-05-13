@@ -76,7 +76,7 @@ export async function POST(request: Request) {
         storagePath,
         fileSizeBytes: BigInt(file.size),
         mimeType: file.type || "application/pdf",
-        status: "active",
+        status: "ACTIVE",
         expiresAt
       }
     });
