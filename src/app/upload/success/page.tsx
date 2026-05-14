@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButtons } from "@/components/CopyButtons";
 import { Clock } from "lucide-react";
-import { useMemo } from "react";
+import { LocalTime } from "@/components/LocalTime"; 
 
 export const metadata: Metadata = {
   robots: {
@@ -25,27 +25,6 @@ export default function UploadSuccessPage({
   const expiresAt =
     typeof searchParams.expiresAt === "string" ? searchParams.expiresAt : "";
   const viewUrl = code ? `/p/${code}` : "#";
-  const parsedExpiresAt = expiresAt ? new Date(expiresAt) : null;
-  const hasValidExpiresAt = Boolean(parsedExpiresAt && !Number.isNaN(parsedExpiresAt.getTime()));
-  const formattedExpiresAt = useMemo(() => {
-      if (!expiresAt) {
-        return "-";
-      }
-  
-      const parsedDate = new Date(expiresAt);
-      if (Number.isNaN(parsedDate.getTime())) {
-        return "-";
-      }
-  
-      return new Intl.DateTimeFormat("zh-TW", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false
-      }).format(parsedDate);
-    }, [expiresAt]);
 
   return (
     <main className="relative flex min-h-screen w-full items-center justify-center bg-slate-50 px-6 py-12">
@@ -89,7 +68,7 @@ export default function UploadSuccessPage({
             <div className="inline-flex items-center gap-2 text-xs text-slate-500">
               <Clock size={14} className="text-slate-400" aria-hidden="true" />
               <span>到期時間：</span>
-              <span className="font-semibold text-slate-800">{formattedExpiresAt}</span>
+              <LocalTime expiresAt={expiresAt} />
             </div>
             <div className="mt-1 text-xs text-slate-500">此簡報將於上述時間自動銷毀。</div>
           </div>
