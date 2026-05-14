@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CopyButtons } from "@/components/CopyButtons";
 import { Clock } from "lucide-react";
+import { useMemo } from "react";
 
 export const metadata: Metadata = {
   robots: {
@@ -26,16 +27,25 @@ export default function UploadSuccessPage({
   const viewUrl = code ? `/p/${code}` : "#";
   const parsedExpiresAt = expiresAt ? new Date(expiresAt) : null;
   const hasValidExpiresAt = Boolean(parsedExpiresAt && !Number.isNaN(parsedExpiresAt.getTime()));
-  const formattedExpiresAt = hasValidExpiresAt
-    ? new Intl.DateTimeFormat("zh-TW", {
+  const formattedExpiresAt = useMemo(() => {
+      if (!expiresAt) {
+        return "-";
+      }
+  
+      const parsedDate = new Date(expiresAt);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return "-";
+      }
+  
+      return new Intl.DateTimeFormat("zh-TW", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false
-      }).format(parsedExpiresAt as Date)
-    : "-";
+      }).format(parsedDate);
+    }, [expiresAt]);
 
   return (
     <main className="relative flex min-h-screen w-full items-center justify-center bg-slate-50 px-6 py-12">
