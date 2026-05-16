@@ -2,7 +2,7 @@
 
 > 文件位置：`.github/copilot-instructions.md`  
 > 本文件供 VS Code GitHub Copilot / Copilot Chat 作為專案開發時的 repository-level instructions。  
-> 請同時參考專案根目錄的 `prototype-plan.md`。
+> 請同時參考專案根目錄的 `prototype-plan.md`與`product-strategy.md`。
 
 ---
 
@@ -161,7 +161,7 @@ storage:
   path: /app/uploads
 
 infrastructure:
-  cloud: Oracle Cloud VM.Standard.A1.Flex 2 OCPU / 12GB
+  cloud: Oracle Cloud Always Free VM.Standard.A1.Flex 2 OCPU / 12GB
   os: Ubuntu
   container: Docker Compose
   reverse_proxy: Caddy
@@ -457,7 +457,7 @@ Request：
 
 ```text
 file: PDF
-retention: 24h | 3d | 7d
+retention: 1h | 24h | 3d | 7d
 ```
 
 Response：
