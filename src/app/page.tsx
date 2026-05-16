@@ -66,8 +66,9 @@ export default function HomePage() {
 
       <section className="mx-auto w-full max-w-lg text-center">
         <h1 className="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">輸入簡報代碼</h1>
-        <p className="mt-3 text-sm text-slate-400 sm:text-base">
-          不用 USB，不用登入雲端硬碟。輸入代碼即可在任何電腦開啟簡報。
+        <p className="mt-3 text-sm text-slate-400 sm:text-base leading-relaxed">
+          不用 USB，不用登入雲端帳號。<br />
+          輸入代碼，在任何電腦立即開始簡報。
         </p>
         <div className="mt-8 sm:mt-10">
           <CodeInput variant="hero" autoFocus />

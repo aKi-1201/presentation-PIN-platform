@@ -586,7 +586,7 @@ CREATE TABLE presentations (
   storage_path TEXT NOT NULL,
   file_size_bytes BIGINT NOT NULL,
   mime_type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   deleted_at TIMESTAMPTZ NULL,
@@ -642,7 +642,7 @@ status:
   EXPIRED: 已由 cleanup job 清除或標記刪除
 ```
 
-過期可透過 `expires_at < now()` 判斷，不一定需要額外存 `expired` 狀態。
+過期可透過 `expires_at < now()` 判斷，不一定需要額外存 `EXPIRED` 狀態。
 
 ---
 

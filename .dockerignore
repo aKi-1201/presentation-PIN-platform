@@ -4,6 +4,8 @@ uploads/
 node_modules/
 .next/
 .git/
+.github/
+docs/
 
 # 忽略環境變數與日誌
 .env

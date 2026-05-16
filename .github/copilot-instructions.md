@@ -161,7 +161,7 @@ storage:
   path: /app/uploads
 
 infrastructure:
-  cloud: Oracle Cloud Always Free VM.Standard.A1.Flex 2 OCPU / 12GB
+  cloud: Oracle Cloud VM.Standard.A1.Flex 2 OCPU / 12GB
   os: Ubuntu
   container: Docker Compose
   reverse_proxy: Caddy
@@ -457,7 +457,7 @@ Request：
 
 ```text
 file: PDF
-retention: 1h | 24h | 3d | 7d
+retention: 24h | 3d | 7d
 ```
 
 Response：
